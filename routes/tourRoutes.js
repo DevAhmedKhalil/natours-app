@@ -1,0 +1,85 @@
+const express = require('express');
+const tourController = require('./../controllers/tourController');
+const authController = require('./../controllers/authController');
+const reviewRouter = require('./../routes/reviewRoutes');
+
+const router = express.Router();
+
+// router.param('id', tourController.checkID);
+
+//# vid( 158. Implementing Simple Nested Routes )
+// nested route => POST /tour/343434/reviews
+// nested route => GET  /tour/343434/reviews
+// nested route => GET  /tour/343434/reviews/45454545
+
+//# vid( 159. Nested Routes with Express )
+// router
+//   .route('/:tourId/reviews')
+//   .post(
+//     authController.protect,
+//     authController.restrictTo('user'),
+//     reviewController.createReview
+//   );
+
+//================================================================================================================
+router.use('/:tourId/reviews', reviewRouter); // mounting a router
+
+//================================================================================================================
+router
+  .route('/top-5-cheap')
+  .get(tourController.aliasTopTours, tourController.getAllTours);
+
+//================================================================================================================
+router.route('/tour-stats').get(tourController.getTourStats);
+
+router
+  .route('/monthly-plan/:year')
+  .get(
+    authController.protect,
+    authController.restrictTo('admin', 'lead-guide', 'guide'),
+    tourController.getMonthlyPlan
+  );
+
+//================================================================================================================
+//# vid( 171. Geospatial Queries: Finding Tours Within Radius )
+router
+  .route('/tours-within/:distance/center/:latlng/unit/:unit')
+  .get(tourController.getToursWithin);
+// /tours-distance?distance=233&center-40,45&unit=mi
+// /tours-within/233/center/-40,45/unit/mi
+
+//================================================================================================================
+//# vid( 172. Geospatial Aggregation: Calculating Distances )
+router.route('/distances/:latlng/unit/:unit').get(tourController.getDistances);
+
+//================================================================================================================
+router
+  .route('/')
+  //# vid(131. Protecting Tour Routes - Part 1)
+  .get(tourController.getAllTours)
+  .post(
+    authController.protect,
+    authController.restrictTo('admin', 'lead-guide'),
+    tourController.createTour
+  );
+
+//================================================================================================================
+router
+  .route('/:id')
+  .get(tourController.getTour)
+  .patch(
+    authController.protect,
+    authController.restrictTo('admin', 'lead-guide'),
+    tourController.uploadTourImages,
+    tourController.resizeTourImages,
+    tourController.updateTour
+  )
+  .delete(
+    //# vid(134. Authorization: User Roles and Permissions)
+    authController.protect,
+    authController.restrictTo('admin', 'lead-guide'),
+    tourController.deleteTour
+  );
+
+//================================================================================================================
+module.exports = router;
